@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jocul Hangman</title>
+
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #4CAF50;
+            font-size: 3rem;
+        }
+
+        input[type="file"] {
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #output {
+            width: 80%;
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            margin-top: 30px;
+            white-space: pre-wrap;
+            text-align: left;
+            font-size: 1.1rem;
+            color: #333;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        #finalResult {
+            font-size: 1.3rem;
+            color: #333;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        /* Stiluri pentru ecrane mai mici (telefoane, tablete) */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+
+            #output {
+                width: 95%;
+            }
+            #finalResult {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Titlu -->
+    <h1>Jocul Hangman</h1>
+
+    <!-- Rezultatul final afișat sus -->
+    <div id="finalResult"></div>
+
+    <!-- Input pentru fișier -->
+    <input type="file" id="fileInput">
+
+    <!-- Buton pentru rularea jocului Hangman -->
+    <button onclick="runHangman()">Rulează Hangman</button>
+
+    <!-- Zona pentru afișarea rezultatelor -->
+    <div id="output"></div>
+
+    <script>
+        let cuvinte = []; // Declarație pentru lista cu cuvinte
+
+        // Funcție care returnează vocalele
+        function obtineVocale() {
+            // Codurile Unicode pentru vocale mari: A, E, I, O, U
+            return String.fromCharCode(65, 69, 73, 79, 85).split('');
+        }
+
+        // Funcție care returnează consoanele
+        function obtineConsoane() {
+            // Coduri Unicode pentru consoanele frecvente
+            let primaParte = String.fromCharCode(78, 82, 84, 83, 76, 67, 68); // N, R, T, S, L, C, D
+            let aDouaParte = String.fromCharCode(77, 80, 86, 70, 90, 66, 71, 72); // M, P, V, F, Z, B, G, H
+            return (primaParte + aDouaParte).split(''); // Îmbinăm ambele părți și le împărțim într-un array
+        }
+
+        // Litere frecvente la începutul și sfârșitul cuvântului
+        const litereFrecventePozitie = {
+            'start': ['A', 'P', 'C', 'B', 'D', 'T', 'R'], // Litere pentru prima poziție
+            'end': ['E', 'I', 'L', 'A', 'N', 'U', 'R', 'T'] // Litere pentru ultima poziție
+        };
+
+        // Funcție pentru citirea fișierului CSV încărcat de utilizator
+        document.getElementById('fileInput').addEventListener('change', function (event) {
+            const file = event.target.files[0]; // Obținem fișierul selectat
+            const reader = new FileReader();
+
+            // Citim conținutul fișierului
+            reader.onload = function (e) {
+                const content = e.target.result;
+                const lines = content.trim().split('\n'); // Împărțim fișierul în linii
+                cuvinte = lines.map(line => {
+                    const [cod, partial, complet] = line.split(';'); // Extragem codul, parțialul și cuvântul complet
+                    return { cod, partial, complet }; // Returnăm fiecare cuvânt sub formă de obiect
+                });
+            };
+
+            reader.readAsText(file); // Citim fișierul ca text
+        });
+
+        // Funcție care completează cuvântul pe baza literelor frecvente
+        function completareCuvantOptimizat(cuvantPartial, cuvantComplet) {
+            let incercari = 0; // Contor pentru încercări
+            let cuvantActual = cuvantPartial.split(''); // Transformăm cuvântul în array de caractere
+            let litereGicite = new Set(cuvantPartial.replace(/\*/g, '').toUpperCase()); // Literele deja cunoscute
+
+            // Ghicim prima literă folosind literele frecvente la început
+            if (cuvantPartial[0] === '*') {
+                for (let litera of litereFrecventePozitie.start) {
+                    if (cuvantComplet[0].toUpperCase() === litera) {
+                        cuvantActual[0] = litera; // Actualizăm prima literă
+                        litereGicite.add(litera);
+                        incercari++;
+                        break;
+                    }
+                }
+            }
+
+            // Ghicim ultima literă folosind literele frecvente la final
+            if (cuvantPartial[cuvantPartial.length - 1] === '*') {
+                for (let litera of litereFrecventePozitie.end) {
+                    if (cuvantComplet[cuvantPartial.length - 1].toUpperCase() === litera) {
+                        cuvantActual[cuvantPartial.length - 1] = litera; // Actualizăm ultima literă
+                        litereGicite.add(litera);
+                        incercari++;
+                        break;
+                    }
+                }
+            }
+
+            // Ghicim vocalele rămase
+            let vocale = obtineVocale();  // Obținem vocalele
+            for (let litera of vocale) {
+                if (!litereGicite.has(litera)) {
+                    for (let i = 1; i < cuvantComplet.length - 1; i++) {
+                        if (cuvantComplet[i].toUpperCase() === litera && cuvantPartial[i] === '*') {
+                            cuvantActual[i] = litera; // Actualizăm steluțele cu vocale corecte
+                            litereGicite.add(litera);
+                            incercari++;
+                        }
+                    }
+                }
+            }
+
+            // Ghicim consoanele rămase
+            let consoane = obtineConsoane();  // Obținem consoanele
+            for (let litera of consoane) {
+                if (!litereGicite.has(litera)) {
+                    for (let i = 1; i < cuvantComplet.length - 1; i++) {
+                        if (cuvantComplet[i].toUpperCase() === litera && cuvantPartial[i] === '*') {
+                            cuvantActual[i] = litera; // Actualizăm steluțele cu consoane corecte
+                            litereGicite.add(litera);
+                            incercari++;
+                        }
+                    }
+                }
+            }
+
+            // Înlocuim toate steluțele rămase cu literele corecte
+            for (let i = 0; i < cuvantActual.length; i++) {
+                if (cuvantActual[i] === '*') {
+                    cuvantActual[i] = cuvantComplet[i].toUpperCase();
+                }
+            }
+
+            return { cuvantGicit: cuvantActual.join(''), incercari }; // Returnăm cuvântul ghicit și numărul de încercări
+        }
+
+        // Funcția principală care rulează jocul Hangman
+        function runHangman() {
+            let totalIncercari = 0; // Total încercări
+            const output = document.getElementById('output'); // Zona de output
+            const finalResult = document.getElementById('finalResult');
+            output.textContent = ''; // Resetează conținutul afișat
+
+            // Parcurgem fiecare cuvânt și încercăm să-l ghicim
+            cuvinte.forEach(({ cod, partial, complet }) => {
+                const { cuvantGicit, incercari } = completareCuvantOptimizat(partial, complet);
+                totalIncercari += incercari; // Adunăm încercările
+
+                // Afișăm rezultatele pentru fiecare cuvânt
+                output.textContent += `Jocul: ${cod}, Am ghicit: ${cuvantGicit}, Încercări: ${incercari}\n`;
+            });
+
+            finalResult.textContent = `Rezultatul de încercări: ${totalIncercari}`;
+            if (totalIncercari > 1200) {
+                finalResult.textContent += " - Limita de 1200 a fost depășită!";
+            } else {
+                finalResult.textContent += " - Toate cuvintele au fost ghicite!";
+            }
+
+            // Afișăm totalul încercărilor
+            output.textContent += `Rezultatul de încercări: ${totalIncercari}\n`;
+
+            // Verificăm dacă numărul de încercări a depășit limita
+            if (totalIncercari > 1200) {
+                output.textContent += "Numărul de încercări a depășit limita de 1200.\n";
+            } else {
+                output.textContent += "Toate cuvintele au fost găsite cu succes sub limita de 1200 încercări!\n";
+            }
+        }
+    </script>
+</body>
+</html>
