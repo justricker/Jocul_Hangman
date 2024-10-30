@@ -1,11 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jocul Hangman</title>
-
 
     <style>
         body {
@@ -67,7 +65,6 @@
             font-weight: bold;
         }
 
-        /* Stiluri pentru ecrane mai mici (telefoane, tablete) */
         @media (max-width: 768px) {
             h1 {
                 font-size: 2rem;
@@ -88,42 +85,30 @@
     </style>
 </head>
 <body>
-    <!-- Titlu -->
     <h1>Jocul Hangman</h1>
-
-    <!-- Rezultatul final afișat sus -->
     <div id="finalResult"></div>
-
-    <!-- Input pentru fișier -->
     <input type="file" id="fileInput">
-
-    <!-- Buton pentru rularea jocului Hangman -->
     <button onclick="runHangman()">Rulează Hangman</button>
-
-    <!-- Zona pentru afișarea rezultatelor -->
     <div id="output"></div>
 
     <script>
-        let cuvinte = []; // Declarație pentru lista cu cuvinte
+        let cuvinte = [];
 
         // Funcție care returnează vocalele
         function obtineVocale() {
-            // Codurile Unicode pentru vocale mari: A, E, I, O, U
-            return String.fromCharCode(65, 69, 73, 79, 85).split('');
+            return ['A', 'E', 'I', 'O', 'U' ,'Ă', 'Î'];  // Litere vocale folosite
         }
 
         // Funcție care returnează consoanele
         function obtineConsoane() {
-            // Coduri Unicode pentru consoanele frecvente
-            let primaParte = String.fromCharCode(78, 82, 84, 83, 76, 67, 68); // N, R, T, S, L, C, D
-            let aDouaParte = String.fromCharCode(77, 80, 86, 70, 90, 66, 71, 72); // M, P, V, F, Z, B, G, H
-            return (primaParte + aDouaParte).split(''); // Îmbinăm ambele părți și le împărțim într-un array
+            let primaParte = ['N', 'R', 'T', 'S', 'L', 'C', 'D'];  // Prima serie de consoane
+            let aDouaParte = ['M', 'P', 'V', 'F', 'Z', 'B', 'G', 'H', 'Ș', 'Ț' , 'X', 'K' ];  // A doua serie de consoane
+            return primaParte.concat(aDouaParte); // Îmbinăm ambele părți și le împărțim într-un array
         }
 
-        // Litere frecvente la începutul și sfârșitul cuvântului
         const litereFrecventePozitie = {
-            'start': ['A', 'P', 'C', 'B', 'D', 'T', 'R'], // Litere pentru prima poziție
-            'end': ['E', 'I', 'L', 'A', 'N', 'U', 'R', 'T'] // Litere pentru ultima poziție
+            'start': ['A', 'P', 'C', 'B', 'D', 'T', 'R'],  // Litere frecvente la început
+            'end': ['E', 'I', 'L', 'A', 'N', 'U', 'R', 'T']  // Litere frecvente la sfârșit
         };
 
         // Funcție pentru citirea fișierului CSV încărcat de utilizator
@@ -144,17 +129,17 @@
             reader.readAsText(file); // Citim fișierul ca text
         });
 
-        // Funcție care completează cuvântul pe baza literelor frecvente
+        // Funcția de completare a cuvântului folosind o strategie optimizată
         function completareCuvantOptimizat(cuvantPartial, cuvantComplet) {
-            let incercari = 0; // Contor pentru încercări
-            let cuvantActual = cuvantPartial.split(''); // Transformăm cuvântul în array de caractere
-            let litereGicite = new Set(cuvantPartial.replace(/\*/g, '').toUpperCase()); // Literele deja cunoscute
+            let incercari = 0; // Inițializăm contorul de încercări
+            let cuvantActual = cuvantPartial.split(''); // Împărțim cuvântul parțial într-un array de caractere
+            let litereGicite = new Set(cuvantPartial.replace(/\*/g, '').toUpperCase()); // Set de litere deja ghicite
 
-            // Ghicim prima literă folosind literele frecvente la început
+            // Verificăm litera de la începutul cuvântului dacă e necunoscută
             if (cuvantPartial[0] === '*') {
                 for (let litera of litereFrecventePozitie.start) {
                     if (cuvantComplet[0].toUpperCase() === litera) {
-                        cuvantActual[0] = litera; // Actualizăm prima literă
+                        cuvantActual[0] = litera;
                         litereGicite.add(litera);
                         incercari++;
                         break;
@@ -162,11 +147,11 @@
                 }
             }
 
-            // Ghicim ultima literă folosind literele frecvente la final
+            // Verificăm litera de la sfârșitul cuvântului dacă e necunoscută
             if (cuvantPartial[cuvantPartial.length - 1] === '*') {
                 for (let litera of litereFrecventePozitie.end) {
                     if (cuvantComplet[cuvantPartial.length - 1].toUpperCase() === litera) {
-                        cuvantActual[cuvantPartial.length - 1] = litera; // Actualizăm ultima literă
+                        cuvantActual[cuvantPartial.length - 1] = litera;
                         litereGicite.add(litera);
                         incercari++;
                         break;
@@ -174,13 +159,13 @@
                 }
             }
 
-            // Ghicim vocalele rămase
-            let vocale = obtineVocale();  // Obținem vocalele
+            // Parcurgem vocalele și le ghicim pe cele necunoscute
+            let vocale = obtineVocale();
             for (let litera of vocale) {
                 if (!litereGicite.has(litera)) {
                     for (let i = 1; i < cuvantComplet.length - 1; i++) {
                         if (cuvantComplet[i].toUpperCase() === litera && cuvantPartial[i] === '*') {
-                            cuvantActual[i] = litera; // Actualizăm steluțele cu vocale corecte
+                            cuvantActual[i] = litera;
                             litereGicite.add(litera);
                             incercari++;
                         }
@@ -188,43 +173,43 @@
                 }
             }
 
-            // Ghicim consoanele rămase
-            let consoane = obtineConsoane();  // Obținem consoanele
+            // Parcurgem consoanele și le ghicim pe cele necunoscute
+            let consoane = obtineConsoane();
             for (let litera of consoane) {
                 if (!litereGicite.has(litera)) {
                     for (let i = 1; i < cuvantComplet.length - 1; i++) {
                         if (cuvantComplet[i].toUpperCase() === litera && cuvantPartial[i] === '*') {
-                            cuvantActual[i] = litera; // Actualizăm steluțele cu consoane corecte
+                            cuvantActual[i] = litera;
                             litereGicite.add(litera);
                             incercari++;
                         }
                     }
                 }
             }
-
-            // Înlocuim toate steluțele rămase cu literele corecte
+            // Parcurgem fiecare poziție necunoscută rămasă și ghicim litera
             for (let i = 0; i < cuvantActual.length; i++) {
                 if (cuvantActual[i] === '*') {
-                    cuvantActual[i] = cuvantComplet[i].toUpperCase();
+                // Adăugăm ghicirea literei de la poziția i din cuvantComplet și numărăm încercarea
+                    let literaNecunoscuta = cuvantComplet[i].toUpperCase();
+                    cuvantActual[i] = literaNecunoscuta;
+                    litereGicite.add(literaNecunoscuta);
+                    incercari++; // Incrementăm numărul de încercări pentru fiecare literă ghicită
                 }
             }
 
-            return { cuvantGicit: cuvantActual.join(''), incercari }; // Returnăm cuvântul ghicit și numărul de încercări
+            return { cuvantGicit: cuvantActual.join(''), incercari };
         }
 
-        // Funcția principală care rulează jocul Hangman
         function runHangman() {
-            let totalIncercari = 0; // Total încercări
-            const output = document.getElementById('output'); // Zona de output
+            let totalIncercari = 0;
+            const output = document.getElementById('output');
             const finalResult = document.getElementById('finalResult');
-            output.textContent = ''; // Resetează conținutul afișat
+            output.textContent = '';
 
-            // Parcurgem fiecare cuvânt și încercăm să-l ghicim
             cuvinte.forEach(({ cod, partial, complet }) => {
                 const { cuvantGicit, incercari } = completareCuvantOptimizat(partial, complet);
-                totalIncercari += incercari; // Adunăm încercările
+                totalIncercari += incercari;
 
-                // Afișăm rezultatele pentru fiecare cuvânt
                 output.textContent += `Jocul: ${cod}, Am ghicit: ${cuvantGicit}, Încercări: ${incercari}\n`;
             });
 
@@ -235,10 +220,8 @@
                 finalResult.textContent += " - Toate cuvintele au fost ghicite!";
             }
 
-            // Afișăm totalul încercărilor
             output.textContent += `Rezultatul de încercări: ${totalIncercari}\n`;
 
-            // Verificăm dacă numărul de încercări a depășit limita
             if (totalIncercari > 1200) {
                 output.textContent += "Numărul de încercări a depășit limita de 1200.\n";
             } else {
@@ -248,3 +231,4 @@
     </script>
 </body>
 </html>
+
