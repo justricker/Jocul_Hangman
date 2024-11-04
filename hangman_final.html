@@ -102,14 +102,10 @@
         // Funcție care returnează consoanele
         function obtineConsoane() {
             let primaParte = ['N', 'R', 'T', 'S', 'L', 'C', 'D'];  // Prima serie de consoane
-            let aDouaParte = ['M', 'P', 'V', 'F', 'Z', 'B', 'G', 'H', 'Ș', 'Ț' , 'X', 'K' ];  // A doua serie de consoane
+            let aDouaParte = ['M', 'P', 'V', 'F', 'Z', 'B', 'G', 'H', 'Ș', 'Ț' , 'X', 'K', 'J' ];  // A doua serie de consoane
             return primaParte.concat(aDouaParte); // Îmbinăm ambele părți și le împărțim într-un array
         }
 
-        const litereFrecventePozitie = {
-            'start': ['A', 'P', 'C', 'B', 'D', 'T', 'R'],  // Litere frecvente la început
-            'end': ['E', 'I', 'L', 'A', 'N', 'U', 'R', 'T']  // Litere frecvente la sfârșit
-        };
 
         // Funcție pentru citirea fișierului CSV încărcat de utilizator
         document.getElementById('fileInput').addEventListener('change', function (event) {
@@ -135,36 +131,11 @@
             let cuvantActual = cuvantPartial.split(''); // Împărțim cuvântul parțial într-un array de caractere
             let litereGicite = new Set(cuvantPartial.replace(/\*/g, '').toUpperCase()); // Set de litere deja ghicite
 
-            // Verificăm litera de la începutul cuvântului dacă e necunoscută
-            if (cuvantPartial[0] === '*') {
-                for (let litera of litereFrecventePozitie.start) {
-                    if (cuvantComplet[0].toUpperCase() === litera) {
-                        cuvantActual[0] = litera;
-                        litereGicite.add(litera);
-                        incercari++;
-                        break;
-                    }
-                }
-            }
-
-            // Verificăm litera de la sfârșitul cuvântului dacă e necunoscută
-            if (cuvantPartial[cuvantPartial.length - 1] === '*') {
-                for (let litera of litereFrecventePozitie.end) {
-                    if (cuvantComplet[cuvantPartial.length - 1].toUpperCase() === litera) {
-                        cuvantActual[cuvantPartial.length - 1] = litera;
-                        litereGicite.add(litera);
-                        incercari++;
-                        break;
-                    }
-                }
-            }
-
-            // Parcurgem vocalele și le ghicim pe cele necunoscute
-            let vocale = obtineVocale();
+           let vocale = obtineVocale();
             for (let litera of vocale) {
                 if (!litereGicite.has(litera)) {
                     for (let i = 1; i < cuvantComplet.length - 1; i++) {
-                        if (cuvantComplet[i].toUpperCase() === litera && cuvantPartial[i] === '*') {
+                        if (cuvantComplet[i].toUpperCase() === litera && cuvantActual[i] === '*') {
                             cuvantActual[i] = litera;
                             litereGicite.add(litera);
                             incercari++;
@@ -173,12 +144,11 @@
                 }
             }
 
-            // Parcurgem consoanele și le ghicim pe cele necunoscute
             let consoane = obtineConsoane();
             for (let litera of consoane) {
                 if (!litereGicite.has(litera)) {
                     for (let i = 1; i < cuvantComplet.length - 1; i++) {
-                        if (cuvantComplet[i].toUpperCase() === litera && cuvantPartial[i] === '*') {
+                        if (cuvantComplet[i].toUpperCase() === litera && cuvantActual[i] === '*') {
                             cuvantActual[i] = litera;
                             litereGicite.add(litera);
                             incercari++;
@@ -186,16 +156,13 @@
                     }
                 }
             }
-            // Parcurgem fiecare poziție necunoscută rămasă și ghicim litera
+
             for (let i = 0; i < cuvantActual.length; i++) {
                 if (cuvantActual[i] === '*') {
-                // Adăugăm ghicirea literei de la poziția i din cuvantComplet și numărăm încercarea
-                    let literaNecunoscuta = cuvantComplet[i].toUpperCase();
-                    cuvantActual[i] = literaNecunoscuta;
-                    litereGicite.add(literaNecunoscuta);
-                    incercari++; // Incrementăm numărul de încercări pentru fiecare literă ghicită
+                    cuvantActual[i] = cuvantComplet[i].toUpperCase();
                 }
             }
+
 
             return { cuvantGicit: cuvantActual.join(''), incercari };
         }
@@ -231,4 +198,3 @@
     </script>
 </body>
 </html>
-
